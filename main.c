@@ -31,6 +31,7 @@
 #include "tusb.h"
 
 #include "usb_descriptors.h"
+#include "matrix.h"
 
 //--------------------------------------------------------------------+
 // MACRO CONSTANT TYPEDEF PROTYPES
@@ -57,12 +58,14 @@ int main(void)
 {
   board_init();
   tusb_init();
+  initialize_gpio();
 
   while (1)
   {
     tud_task(); // tinyusb device task
     led_blinking_task();
-
+    
+    update_state();
     hid_task();
   }
 
@@ -119,7 +122,7 @@ static void send_hid_report(uint8_t report_id, uint32_t btn)
       if ( btn )
       {
         uint8_t keycode[6] = { 0 };
-        keycode[0] = HID_KEY_A;
+        set_pressed(keycode);
 
         tud_hid_keyboard_report(REPORT_ID_KEYBOARD, 0, keycode);
         has_keyboard_key = true;
@@ -205,7 +208,7 @@ void hid_task(void)
   if ( board_millis() - start_ms < interval_ms) return; // not enough time
   start_ms += interval_ms;
 
-  uint32_t const btn = board_button_read();
+  uint32_t const btn = true; // board_button_read();
 
   // Remote wakeup
   if ( tud_suspended() && btn )
@@ -232,7 +235,7 @@ void tud_hid_report_complete_cb(uint8_t instance, uint8_t const* report, uint16_
 
   if (next_report_id < REPORT_ID_COUNT)
   {
-    send_hid_report(next_report_id, board_button_read());
+    send_hid_report(next_report_id, true); // board_button_read());
   }
 }
 
